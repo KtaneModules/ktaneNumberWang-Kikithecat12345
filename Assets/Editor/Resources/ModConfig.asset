@@ -31,7 +31,7 @@ MonoBehaviour:
     last.
 
 
-    If anyone wants to add TP support or something like that go ahead :P'
+    If anyone wants to add or improve something go ahead :P'
   version: 1.0
   outputFolder: build
-  previewImage: {fileID: 0}
+  previewImage: {fileID: 2800000, guid: be90c65f12eef374998c2ba616446235, type: 3}

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using KModkit;
+using System.Text.RegularExpressions;
 
 // thanks Emik for optimization
 public class numberWangScript : MonoBehaviour
@@ -36,17 +37,22 @@ public class numberWangScript : MonoBehaviour
     int back = 0;
     private List<bool> buttonsWanged = new List<bool>();
     bool boardRotated = false;
-
+    bool boardAnimating = false;
+    //Alarm
+    static int wangCounter = 1;
+    int wangID;
 
     void Awake()
     {
         moduleId = moduleIdCounter++;
+        wangID = wangCounter++;
 
         foreach (KMSelectable button in buttons)
         {
             KMSelectable pressedButton = button;
             button.OnInteract += delegate () { ButtonPress(pressedButton); return false; };
         }
+        GetComponent<KMBombModule>().OnActivate += OnActivate;
     }
 
     // Use this for initialization
@@ -59,8 +65,8 @@ public class numberWangScript : MonoBehaviour
             rngG = UnityEngine.Random.Range(0, 101);
             rngB = UnityEngine.Random.Range(0, 101);
             buttonTexts[i].color = new Color((float)rngR / 100, (float)rngG / 100, (float)rngB / 100, 1f);
-
         }
+        string logging = "";
         while (numbersWanged == 0)
         {
             for (int i = 0; i < 12; i++)
@@ -82,10 +88,11 @@ public class numberWangScript : MonoBehaviour
                         break;
                 }
                 // buttonNumbers.Add(UnityEngine.Random.Range(0,10000));
+                Debug.LogFormat("[NumberWang #{0}] Button {1} is {2}", moduleId, i+1, buttonNumbers[i]);
                 if (IsNumberwang(buttonNumbers[i]))
                 {
                     numbersWanged++;
-                    Debug.LogFormat("[NumberWang #{0}] {1} is NumberWang", moduleId, i);
+                    logging += (i+1)+", ";
                 }
                 buttonsWanged.Add(IsNumberwang(buttonNumbers[i]));
             }
@@ -93,22 +100,40 @@ public class numberWangScript : MonoBehaviour
             {
                 buttonsWanged.Clear();
                 buttonNumbers.Clear();
+                logging = "";
             }
         }
         for (int i = 0; i < buttons.Length; i++)
         {
             buttonTexts[i].text = buttonNumbers[i].ToString();
         }
-        Audio.PlaySoundAtTransform("intro", transform);
-        Debug.Log(numbersWanged);
+        StartCoroutine(AlarmReset());
+        //Debug.Log(numbersWanged);
+        logging = logging.Substring(0, logging.Length-2 );
+        if (numbersWanged != 1)
+            Debug.LogFormat("[NumberWang #{0}] The Buttons {1} are NumberWang", moduleId, logging);
+        else
+            Debug.LogFormat("[NumberWang #{0}] The Button {1} is NumberWang", moduleId, logging);
+    }
+
+    void OnActivate()
+    {
+        if (wangID == 1)
+        {
+            Audio.PlaySoundAtTransform("intro", transform);
+        }
     }
 
     void ButtonPress(KMSelectable pressedButton)
     {
-        if (moduleSolved)
+        if (moduleSolved || boardAnimating)
         {
             return;
         }
+
+        pressedButton.AddInteractionPunch();
+        Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, pressedButton.transform);
+
         for (int i = 0; i < buttons.Length; i++)
         {
             if (pressedButton != buttons[i]) continue;
@@ -118,7 +143,8 @@ public class numberWangScript : MonoBehaviour
                 GetComponent<KMBombModule>().HandleStrike();
                 screenText.text = "You've been\nWangerNumbed!";
                 StartCoroutine(HandleScreen());
-                Debug.LogFormat("[NumberWang #{0}] Strike! Button {1} has been pressed before.", moduleId, i);
+                Debug.LogFormat("[NumberWang #{0}] Strike! Button {1} has been pressed before.", moduleId, i+1);
+                return;
             }
             else
             {
@@ -127,17 +153,18 @@ public class numberWangScript : MonoBehaviour
                     GetComponent<KMBombModule>().HandleStrike();
                     screenText.text = "You've been\nWangerNumbed!";
                     StartCoroutine(HandleScreen());
-                    Debug.LogFormat("[NumberWang #{0}] Strike! Button {1} is not NumberWang.", moduleId, i);
+                    Debug.LogFormat("[NumberWang #{0}] Strike! Button {1} is not NumberWang.", moduleId, i+1);
+                    return;
                 }
                 else
                 {
                     buttonsPressed.Add(i);
-                    Debug.LogFormat("[NumberWang #{0}] Correct Press, Button {1} is NumberWang", moduleId, i);
+                    Debug.LogFormat("[NumberWang #{0}] Correct Press, Button {1} is NumberWang", moduleId, i+1);
                 }
             }
         }
 
-        if ((buttonsPressed.Count() + 1) == numbersWanged && boardRotated == false)
+        if (((buttonsPressed.Count() + 1) == numbersWanged || numbersWanged == 1) && boardRotated == false)
         {
             back = UnityEngine.Random.Range(0, 2);
             rotateBoardBack.GetComponent<MeshRenderer>().material = pictures[back];
@@ -156,6 +183,12 @@ public class numberWangScript : MonoBehaviour
         }
     }
 
+    IEnumerator AlarmReset()
+    {
+        yield return new WaitForSeconds(1f);
+        wangCounter = 0;
+    }
+
     IEnumerator HandleScreen()
     {
         yield return new WaitForSeconds(2f);
@@ -164,15 +197,28 @@ public class numberWangScript : MonoBehaviour
 
     IEnumerator LetsRotateTheBoard() // thanks eXish
     {
+        boardAnimating = true;
         int rotation = 0;
         {
             while (rotation != 720)
             {
+                if (rotation == 360)
+                {
+                    yield return new WaitForSeconds(1f);
+                }
                 yield return new WaitForSeconds(0.01f);
                 board.transform.localRotation = Quaternion.Euler(0.0f, 0.0f, 0.50f) * board.transform.localRotation;
                 rotation++;
             }
         }
+        if (numbersWanged == 1)
+        {
+            GetComponent<KMBombModule>().HandlePass();
+            screenText.text = "That's NumberWang!";
+            moduleSolved = true;
+            Debug.LogFormat("[NumberWang #{0}] Module Solved!", moduleId);
+        }
+        boardAnimating = false;
     }
     /// <summary>
     /// Returns true if the number is NumberWang.
@@ -212,5 +258,102 @@ public class numberWangScript : MonoBehaviour
 
     }
 
-}
+    //twitch plays
+    #pragma warning disable 414
+    private readonly string TwitchHelpMessage = @"!{0} press <#> (#)... [Presses the button(s) with the number(s) '#']";
+    #pragma warning restore 414
+    IEnumerator ProcessTwitchCommand(string command)
+    {
+        string[] parameters = command.Split(' ');
+        if (Regex.IsMatch(parameters[0], @"^\s*press\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            yield return null;
+            if (boardAnimating)
+            {
+                yield return "sendtochaterror I cannot press buttons while the board is rotating!";
+                yield break;
+            }
+            if (parameters.Length >= 2)
+            {
+                for (int i = 1; i < parameters.Length; i++)
+                {
+                    int temp = 0;
+                    if (!int.TryParse(parameters[i], out temp))
+                    {
+                        yield return "sendtochaterror The specified number '" + parameters[i] + "' is invalid!";
+                        yield break;
+                    }
+                    if (temp < 0 || temp > 9999)
+                    {
+                        yield return "sendtochaterror The specified number '" + temp + "' is not in range 0-9999!";
+                        yield break;
+                    }
+                    if (!buttonNumbers.Contains(temp))
+                    {
+                        yield return "sendtochaterror The specified number '" + temp + "' is not on any of the buttons!";
+                        yield break;
+                    }
+                }
+                for (int i = 1; i < parameters.Length; i++)
+                {
+                    int temp = int.Parse(parameters[i]);
+                    for (int j = 0; j < 12; j++)
+                    {
+                        if (!buttonsPressed.Contains(j) && buttonNumbers[j] == temp)
+                        {
+                            buttons[j].OnInteract();
+                            yield return new WaitForSeconds(0.1f);
+                            if (numbersWanged != 1 && (numbersWanged - buttonsPressed.Count()) == 1)
+                            {
+                                bool rot = false;
+                                for (int k = j+1; k < 12; k++)
+                                {
+                                    if (buttonNumbers[k] == temp)
+                                    {
+                                        rot = true;
+                                    }
+                                }
+                                if ((parameters.Length-1) > i)
+                                {
+                                    rot = true;
+                                }
+                                if (rot)
+                                    while (boardAnimating) { yield return "trycancel Halted waiting for final button press due to a request to cancel!"; yield return new WaitForSeconds(0.1f); }
+                            }
+                        }
+                    }
+                }
+                if (numbersWanged == 1)
+                {
+                    yield return "solve";
+                }
+            }
+            else if (parameters.Length == 1)
+            {
+                yield return "sendtochaterror Please specify the number(s) of the button(s) you wish to press!";
+            }
+            yield break;
+        }
+    }
 
+    IEnumerator TwitchHandleForcedSolve()
+    {
+        while (boardAnimating) { yield return true; yield return new WaitForSeconds(0.1f); }
+        for (int i = 0; i < 12; i++)
+        {
+            if (!buttonsPressed.Contains(i) && buttonsWanged[i])
+            {
+                buttons[i].OnInteract();
+                yield return new WaitForSeconds(0.1f);
+                if (numbersWanged != 1 && (numbersWanged - buttonsPressed.Count()) == 1)
+                {
+                    while (boardAnimating) { yield return true; yield return new WaitForSeconds(0.1f); }
+                }
+            }
+        }
+        if (numbersWanged == 1)
+        {
+            while (boardAnimating) { yield return true; yield return new WaitForSeconds(0.1f); }
+        }
+    }
+}
