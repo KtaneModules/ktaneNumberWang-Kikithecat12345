@@ -7,6 +7,7 @@ using KModkit;
 using System.Text.RegularExpressions;
 
 // thanks Emik for optimization
+// exish exists in this code
 public class numberWangScript : MonoBehaviour
 {
 
