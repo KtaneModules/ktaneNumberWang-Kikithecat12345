@@ -3174,7 +3174,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HighlightScale: {x: 1, y: 1, z: 1}
-  OutlineAmount: 0.01
+  OutlineAmount: 0
 --- !u!114 &114269365268717762
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -3438,6 +3438,9 @@ MonoBehaviour:
   pictures:
   - {fileID: 2100000, guid: be5d1eda1cd13464fa5a52e2e1b976ff, type: 2}
   - {fileID: 2100000, guid: 70efffc31843b1041876b20630a6e5fd, type: 2}
+  - {fileID: 2100000, guid: 5546a041b9b2147448d2c1e701b8227b, type: 2}
+  - {fileID: 2100000, guid: c7ccc63f522b288479611db58e910e50, type: 2}
+  - {fileID: 2100000, guid: bae171147e47ec644aa3a66b49e40d79, type: 2}
   rotateBoardBack: {fileID: 1592144599514154}
 --- !u!114 &114540352449477048
 MonoBehaviour:
