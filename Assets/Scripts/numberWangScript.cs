@@ -31,7 +31,7 @@ public class numberWangScript : MonoBehaviour
     static readonly private int[] serialWang = new int[] { 23, 18, 2, 31, 22, 7, 34, 289, 90, 35, 40, 43, 61, 8, 52, 404 };
     static readonly private int[] litWang = new int[] { 21, 58, 81, 666, 9, 41, 98, 33, 39, 34, 68, 12, 36, 49, 491, 43, 75, 57, 52, 54, 90, 73, 101, 28 };
     static readonly private int[] batteryWang = new int[] { 22, 36, 89, 40, 11, 5, 31, 50, 360, 12, 420, 70, 7, 45, 23, 121, 1337, 30, 41, 6 };
-    static readonly private int[] parallelWang = new int[] { 34, 29, 78, 25, 58, 35, 11, 23, 560, 13, 47, 2016, 89, 10, 97, 24, 18, 144, 31, 6, 1, 35, 87, 60, 6, 53, 19, 48, 57, 16 };
+    static readonly private int[] parallelWang = new int[] { 34, 29, 78, 25, 58, 35, 11, 23, 560, 13, 47, 2016, 89, 10, 97, 24, 18, 144, 31, 67, 1, 35, 87, 60, 6, 53, 19, 48, 57, 16 };
     static readonly private int[] alwaysWang = new int[] { 189, 30, 3, 201, 56, 4, 42, 69, 125, 37 };
     int numbersWanged = 0;
     int test = 0;
@@ -167,7 +167,7 @@ public class numberWangScript : MonoBehaviour
 
         if (((buttonsPressed.Count() + 1) == numbersWanged || numbersWanged == 1) && boardRotated == false)
         {
-            back = UnityEngine.Random.Range(0, 2);
+            back = UnityEngine.Random.Range(0, 5);
             rotateBoardBack.GetComponent<MeshRenderer>().material = pictures[back];
             screenText.text = "Let's Rotate the Board!";
             StartCoroutine(HandleScreen());
@@ -319,7 +319,7 @@ public class numberWangScript : MonoBehaviour
                                     rot = true;
                                 }
                                 if (rot)
-                                    while (boardAnimating) { yield return "trycancel Halted waiting for final button press due to a request to cancel!"; yield return new WaitForSeconds(0.1f); }
+                                    while (boardAnimating) { yield return "trycancel Halted waiting for final button press due to a request to cancel!"; }
                             }
                         }
                     }
@@ -339,7 +339,7 @@ public class numberWangScript : MonoBehaviour
 
     IEnumerator TwitchHandleForcedSolve()
     {
-        while (boardAnimating) { yield return true; yield return new WaitForSeconds(0.1f); }
+        while (boardAnimating) { yield return true; }
         for (int i = 0; i < 12; i++)
         {
             if (!buttonsPressed.Contains(i) && buttonsWanged[i])
@@ -348,13 +348,13 @@ public class numberWangScript : MonoBehaviour
                 yield return new WaitForSeconds(0.1f);
                 if (numbersWanged != 1 && (numbersWanged - buttonsPressed.Count()) == 1)
                 {
-                    while (boardAnimating) { yield return true; yield return new WaitForSeconds(0.1f); }
+                    while (boardAnimating) { yield return true; }
                 }
             }
         }
         if (numbersWanged == 1)
         {
-            while (boardAnimating) { yield return true; yield return new WaitForSeconds(0.1f); }
+            while (boardAnimating) { yield return true; }
         }
     }
 }
